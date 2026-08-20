@@ -1,0 +1,8 @@
+path,true_grade,pred_grade,abs_error,error
+C:\Users\Kyle\Downloads\optiscan try\archive\Dataset-20260802T063315Z-1-001\Dataset\Nuclear Opalescence - Color\NO0-NC0.png,0,1,1,
+C:\Users\Kyle\Downloads\optiscan try\archive\Dataset-20260802T063315Z-1-001\Dataset\Nuclear Opalescence - Color\NO1-NC1.png,1,0,1,
+C:\Users\Kyle\Downloads\optiscan try\archive\Dataset-20260802T063315Z-1-001\Dataset\Nuclear Opalescence - Color\NO2-NC2.png,2,0,2,
+C:\Users\Kyle\Downloads\optiscan try\archive\Dataset-20260802T063315Z-1-001\Dataset\Nuclear Opalescence - Color\NO3-NC3.png,3,1,2,
+C:\Users\Kyle\Downloads\optiscan try\archive\Dataset-20260802T063315Z-1-001\Dataset\Nuclear Opalescence - Color\NO4-NC4.png,4,1,3,
+C:\Users\Kyle\Downloads\optiscan try\archive\Dataset-20260802T063315Z-1-001\Dataset\Nuclear Opalescence - Color\NO5-NC5.png,5,1,4,
+C:\Users\Kyle\Downloads\optiscan try\archive\Dataset-20260802T063315Z-1-001\Dataset\Nuclear Opalescence - Color\NO6-NC6.png,6,1,5,

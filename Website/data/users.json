@@ -1,0 +1,20 @@
+[
+  {
+    "name": "cien",
+    "email": "ciennwiee@gmail.com",
+    "password": "950dbb8163a0d5bce34a4242699bcc58dfedddaa87df0683ccea948379d651a2",
+    "role": "admin",
+    "active": true,
+    "isQualified": false,
+    "registeredAt": 1787189083805
+  },
+  {
+    "name": "Hershey Co",
+    "email": "hersheyco100@gmail.com",
+    "password": "7ca6c270cfcfb10985c2dd9d6de8e1f057e0c0b52df30bd739767a8c42a7c6a5",
+    "role": "admin",
+    "active": true,
+    "isQualified": false,
+    "registeredAt": 1787192992926
+  }
+]

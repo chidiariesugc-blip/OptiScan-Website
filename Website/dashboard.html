@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiScan Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="partials/dashboard-styles.css">
+    <style>
+
+        body.font-sm, body.font-sm .chat-message, body.font-sm input, body.font-sm button { font-size: 0.85rem !important; }
+        body.font-md, body.font-md .chat-message, body.font-md input, body.font-md button { font-size: 0.95rem !important; }
+        body.font-lg, body.font-lg .chat-message, body.font-lg input, body.font-lg button { font-size: 1.15rem !important; }
+
+        .chat-message-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+            max-width: 78%;
+            gap: 0.2rem;
+        }
+        .chat-message-wrapper .chat-sender-name,
+        .chat-message-wrapper .chat-time,
+        .chat-message-wrapper .reply-note {
+            color: inherit;
+        }
+        .chat-message-wrapper.sender-me { align-self: flex-end; align-items: flex-end; }
+        .chat-message-wrapper.sender-them { align-self: flex-start; align-items: flex-start; }
+        
+        .chat-message {
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            word-break: break-word;
+        }
+        .chat-message.sender-me { background: #800020 !important; color: #ffffff !important; border-bottom-right-radius: 2px; }
+        .chat-message.sender-them { background: #e4e4e7 !important; color: #24313f !important; border-bottom-left-radius: 2px; }
+        
+        .chat-bubble-shell {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            max-width: 100%;
+        }
+        .chat-message-wrapper.sender-me .chat-bubble-shell { flex-direction: row-reverse; }
+        .chat-message-wrapper.sender-them .chat-bubble-shell { flex-direction: row; }
+        .msg-dropdown-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .msg-dropdown-trigger {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #51606f;
+            padding: 0.2rem 0.45rem;
+            line-height: 1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .msg-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 0.3rem);
+            right: 0;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            z-index: 100;
+            min-width: 140px;
+            border: 1px solid #e4e4e7;
+            padding: 0.25rem;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .chat-message-wrapper.sender-them .msg-dropdown-menu {
+            right: auto;
+            left: 0;
+        }
+        .msg-dropdown-menu.show { display: flex; }
+        
+        .msg-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            width: 100%;
+            text-align: left;
+            padding: 0.45rem 0.6rem;
+            background: none;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: #24313f;
+        }
+        .msg-dropdown-item:hover { background: #f4f4f5; }
+        .msg-dropdown-item.delete-action { color: #ef4444; }
+
+        .care-patient-btn {
+            flex: 1;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            color: #111827;
+            border-radius: 8px;
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .care-patient-btn.active {
+            background: #800020;
+            color: #ffffff;
+            border-color: #800020;
+        }
+        .care-patient-row {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-bottom: 0.45rem;
+        }
+        .care-patient-status {
+            font-size: 0.72rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #6b7280;
+            background: #e5e7eb;
+        }
+        .care-patient-status.accepted {
+            color: #166534;
+            background: #dcfce7;
+        }
+        .care-patient-status.pending {
+            color: #92400e;
+            background: #fef3c7;
+        }
+        .care-patient-accept {
+            border: none;
+            background: #800020;
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 0.45rem 0.65rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .care-professional-card {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 1rem;
+            min-height: 380px;
+        }
+        .care-patient-list, .care-profile-block, .care-chat-block {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 0.9rem;
+        }
+        .care-profile-block, .care-chat-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .care-info-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.45rem;
+        }
+        .care-chat-window {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+            min-height: 220px;
+            padding-right: 0.25rem;
+        }
+        .care-chat-entry {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.55rem 0.7rem;
+            font-size: 0.9rem;
+        }
+        .chat-sender-name {
+            color: #f5f7fa;
+            font-size: 0.74rem;
+            font-weight: 700;
+            margin-bottom: 0.18rem;
+        }
+        .chat-time {
+            color: #d1d5db;
+            font-size: 0.7rem;
+            margin-top: 0.3rem;
+        }
+        .care-chat-time {
+            color: #6b7280;
+            font-size: 0.72rem;
+            margin-top: 0.35rem;
+        }
+        .care-empty-state {
+            color: #6b7280;
+            font-size: 0.92rem;
+            margin: 0;
+        }
+        .care-chat-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+        .care-chat-form input {
+            flex: 1;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+        }
+        .care-chat-form button {
+            border: none;
+            background: #800020;
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+        }
+
+        html, body, .dashboard-shell, .dashboard-content, .tab-panel, .card, .sidebar, .chat-sidebar, .chat-main, .chat-window, .chat-input-container, .chat-header, .reply-preview, .chat-sidebar-list, .care-patient-list, .care-profile-block, .care-chat-block, .care-chat-entry, .scanner-card, .verification-card, .verification-grid, .info-grid, .profile-card {
+            background: #f7f7f5 !important;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f7f7f5 !important;
+        }
+        body {
+            background: #f7f7f5 !important;
+            color: #24313f;
+            transition: font-size 0.15s ease;
+            overflow: hidden;
+        }
+
+        .scanner-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+        #scannerVideo {
+            display: block;
+            width: 100%;
+            max-width: 760px;
+            min-height: 280px;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid #800020;
+            background: #000;
+            margin: 0 auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            transform: scaleX(-1);
+        }
+        .scanner-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        .capture-thumb {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            background: #f9fafb;
+        }
+        .scanner-status {
+            font-size: 0.9rem;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        .dashboard-shell {
+            display: flex;
+            background: #fcfcfa !important;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+            margin: 1rem;
+            min-height: calc(100vh - 2rem);
+            max-height: calc(100vh - 2rem);
+        }
+        .sidebar {
+            background: #f3efe8 !important;
+            border-right: 1px solid #e6dfd3;
+            width: 260px;
+            min-width: 220px;
+            padding: 1.2rem 1rem 1.2rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar h1 { color: #2f3a46 !important; margin-bottom: 0.25rem; font-size: 1.35rem; }
+        .sidebar-subtitle { color: #5f6b76 !important; margin-top: 0; margin-bottom: 1rem; }
+        .tab-btn { color: #374151 !important; background: transparent; padding: 0.7rem 0.85rem; border-radius: 8px; }
+        .tab-btn.active { background: #8b4f5d !important; color: #ffffff !important; }
+        .tab-btn:hover:not(.active) { background: #ece4d9 !important; }
+        .tab-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        .dashboard-content {
+            flex: 1;
+            min-width: 0;
+            overflow: auto;
+            padding: 1rem;
+            box-sizing: border-box;
+            background: #f7f7f5 !important;
+        }
+        .tab-panel {
+            background: #fcfcfa !important; 
+            color: #24313f !important;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            margin: 0;
+            min-height: calc(100vh - 8rem);
+            box-sizing: border-box;
+        }
+        .tab-panel h2 { color: #2b3642 !important; margin-top: 0; margin-bottom: 0.4rem; }
+        .tab-panel p, .tab-panel li, .tab-panel span, .tab-panel label { color: #51606f !important; line-height: 1.55; }
+
+        .card {
+            background: #fcfcfa !important;
+            border: 1px solid #e7e1d8 !important;
+            color: #24313f !important;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+            border-radius: 12px;
+        }
+        .card h3 { color: #2b3642 !important; margin-top: 0; margin-bottom: 0.6rem; }
+
+        .verification-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .verification-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .license-preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            background: #eeea;
+        }
+        .admin-action-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .btn-approve { background: #10b981; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-reject { background: #ef4444; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-delete { background: #b91c1c; color: white; border: none; padding: 0.25rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+
+        body[data-theme="dark"] {
+            background: #111827 !important;
+            color: #e8e3da !important;
+        }
+        body[data-theme="dark"] .dashboard-shell,
+        body[data-theme="dark"] .dashboard-content,
+        body[data-theme="dark"] .sidebar,
+        body[data-theme="dark"] .tab-panel,
+        body[data-theme="dark"] .card,
+        body[data-theme="dark"] .chat-sidebar,
+        body[data-theme="dark"] .chat-main,
+        body[data-theme="dark"] .chat-window,
+        body[data-theme="dark"] .chat-input-container,
+        body[data-theme="dark"] .chat-header,
+        body[data-theme="dark"] .reply-preview,
+        body[data-theme="dark"] .care-patient-list,
+        body[data-theme="dark"] .care-profile-block,
+        body[data-theme="dark"] .care-chat-block,
+        body[data-theme="dark"] .care-chat-entry,
+        body[data-theme="dark"] .verification-card,
+        body[data-theme="dark"] .scanner-card,
+        body[data-theme="dark"] .profile-card {
+            background: #1a2230 !important;
+            color: #e8e3da !important;
+        }
+        body[data-theme="dark"] .sidebar h1,
+        body[data-theme="dark"] .sidebar-subtitle,
+        body[data-theme="dark"] .tab-btn,
+        body[data-theme="dark"] .tab-panel h2,
+        body[data-theme="dark"] .tab-panel p,
+        body[data-theme="dark"] .tab-panel li,
+        body[data-theme="dark"] .tab-panel span,
+        body[data-theme="dark"] .tab-panel label,
+        body[data-theme="dark"] .card h3,
+        body[data-theme="dark"] .reply-preview span,
+        body[data-theme="dark"] .care-empty-state,
+        body[data-theme="dark"] .scanner-status,
+        body[data-theme="dark"] .care-chat-time {
+            color: #e8e3da !important;
+        }
+        body[data-theme="dark"] .tab-btn {
+            border-color: #4a5568;
+            color: #e8e3da !important;
+        }
+        body[data-theme="dark"] .chat-sidebar,
+        body[data-theme="dark"] .chat-header,
+        body[data-theme="dark"] .chat-input-container,
+        body[data-theme="dark"] .reply-preview,
+        body[data-theme="dark"] .chat-sidebar-list,
+        body[data-theme="dark"] .chat-window {
+            background-color: #1a2230 !important;
+            color: #e8e3da !important;
+        }
+        body[data-theme="dark"] .chat-sidebar h3,
+        body[data-theme="dark"] .chat-header h3,
+        body[data-theme="dark"] .chat-contact-name,
+        body[data-theme="dark"] .reply-preview span,
+        body[data-theme="dark"] .chat-sender-name,
+        body[data-theme="dark"] .chat-time,
+        body[data-theme="dark"] .msg-dropdown-item,
+        body[data-theme="dark"] .msg-dropdown-trigger {
+            color: #e8e3da !important;
+        }
+        body[data-theme="dark"] .tab-btn:hover:not(.active) {
+            background: #263244 !important;
+        }
+        body[data-theme="dark"] button,
+        body[data-theme="dark"] input,
+        body[data-theme="dark"] select,
+        body[data-theme="dark"] textarea {
+            color: #e8e3da !important;
+            background-color: #24313f !important;
+            border-color: #4a5568 !important;
+        }
+        body[data-theme="dark"] .btn-approve,
+        body[data-theme="dark"] .btn-reject,
+        body[data-theme="dark"] .btn-delete,
+        body[data-theme="dark"] .care-patient-accept,
+        body[data-theme="dark"] .auth-btn,
+        body[data-theme="dark"] .chat-input-container button,
+        body[data-theme="dark"] #themeToggleBtn {
+            color: #ffffff !important;
+            background-color: #8b4f5d !important;
+            border-color: #8b4f5d !important;
+        }
+        body[data-theme="dark"] .msg-dropdown-trigger,
+        body[data-theme="dark"] .care-patient-btn,
+        body[data-theme="dark"] .msg-dropdown-item {
+            color: #e8e3da !important;
+            background-color: #24313f !important;
+            border-color: #4a5568 !important;
+        }
+    </style>
+</head>
+<body class="font-md">
+    <div class="dashboard-shell">
+        <aside class="sidebar">
+            <h1>OptiScan Dashboard</h1>
+            <p class="sidebar-subtitle">Your vision support center</p>
+            <nav class="tab-nav" role="tablist">
+                <button class="tab-btn active" data-target="home">Homepage</button>
+                <button class="tab-btn" data-target="scanner">Scanner</button>
+                <button class="tab-btn" data-target="info">Information</button>
+                <button class="tab-btn" data-target="chats" id="chatsTabBtn">Chats</button>
+                <button class="tab-btn" data-target="care" id="careTabBtn" hidden>Patient Dashboard</button>
+                <button class="tab-btn" data-target="profile" id="profileTabBtn">Profile</button>
+                <button class="tab-btn" data-target="settings">Settings</button>
+                <button class="tab-btn" data-target="admin" id="adminTabBtn" hidden>Admin Panel</button>
+            </nav>
+            <a class="back-link" id="logoutLink" href="#" style="color: #f87171 !important;">Log Out</a>
+        </aside>
+
+        <main class="dashboard-content" style="background: transparent; padding: 0.5rem;">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:0.5rem;">
+                <button id="themeToggleBtn" type="button" style="padding:0.45rem 0.75rem; border:1px solid #475569; border-radius:999px; background:#111827; color:#f8fafc; cursor:pointer; font-weight:600;">🌙 Dark Mode</button>
+            </div>
+            
+            <section class="tab-panel active" id="home" style="background: transparent;">
+                <h2 id="welcome-heading">Welcome, Guest!</h2>
+                <p id="welcome-message" style="color: #51606f;">You have access to the dashboard without signing in.</p>
+
+                <div class="card" style="margin-top: 1.5rem; padding: 1.25rem;">
+                    <h3>About OptiScan</h3>
+                    <p>OptiScan is a specialized web space engineered to help monitor conditions like cataracts, refractive errors, and optical tracking complications.</p>
+                </div>
+
+                <div class="card" style="margin-top: 1rem; padding: 1.25rem;">
+                    <h3>Available Doctors</h3>
+                    <p style="margin-top: 0.25rem;">Browse verified specialists and their clinics from the homepage.</p>
+                    <div id="doctorListHome" style="display: grid; gap: 0.7rem; margin-top: 0.75rem;"></div>
+                </div>
+
+                <div class="card" style="margin-top: 1rem; padding: 1.25rem;">
+                    <h3>Proponents</h3>
+                    <ul class="proponent-list" style="color: #51606f; padding-left: 1.25rem;">
+                        <li>Bernabe, Chloe</li>
+                        <li>Co, Hershey</li>
+                        <li>Fuerte, Yna</li>
+                        <li>Sarmiento, Grace</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="scanner" style="background: transparent;">
+                <h2>Scanner</h2>
+                <p>Start the camera and capture as many images as you need.</p>
+
+                <div class="card scanner-card" style="padding: 1rem;">
+                    <video id="scannerVideo" autoplay playsinline muted></video>
+                    <div class="scanner-actions">
+                        <button id="startCameraBtn" type="button" class="tab-btn active">Start Camera</button>
+                        <button id="capturePhotoBtn" type="button" class="tab-btn">Capture Image</button>
+                        <button id="clearGalleryBtn" type="button" class="tab-btn">Clear Gallery</button>
+                    </div>
+                    <div id="scannerStatus" class="scanner-status">Camera is idle.</div>
+                </div>
+
+                <div class="card" style="margin-top: 1rem; padding: 1rem;">
+                    <h3>AI Eye Assessment</h3>
+                    <div id="diagnosisAccessNotice" style="display: none; margin-bottom: 0.75rem; padding: 0.7rem 0.8rem; border-radius: 8px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.9rem;">
+                        Only qualified medical professionals can run diagnosis-focused assessments.
+                    </div>
+                    <div class="scanner-actions" style="justify-content: flex-start; margin-bottom: 0.75rem;">
+                        <button id="enhanceCameraBtn" type="button" class="tab-btn">Auto-Enhance Preview</button>
+                        <label for="cataractTypeSelect" style="display: inline-flex; align-items: center; gap: 0.4rem; color: #374151;">
+                            Assessment type
+                            <select id="cataractTypeSelect" class="tab-btn" style="padding: 0.45rem 0.65rem;">
+                                <option value="nuclear">Nuclear</option>
+                                <option value="cortical">Cortical</option>
+                                <option value="psc">Posterior subcapsular</option>
+                            </select>
+                        </label>
+                        <button id="aiAnalyzeBtn" type="button" class="tab-btn" data-ai-api="true">Run AI Diagnosis</button>
+                    </div>
+                    <div id="cataractTypeHint" class="scanner-status" style="text-align: left;">Position for a direct slit-lamp image before capturing.</div>
+                    <div id="cameraQualityStatus" class="scanner-status">Preview quality will be assessed here.</div>
+                    <div id="aiAnalysisOutput" style="margin-top: 0.75rem; padding: 0.9rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; color: #374151;">
+                        <strong>Initial AI review:</strong> Capture or run the scan to receive an initial eye image analysis and camera quality suggestion.
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 1rem; padding: 1rem;">
+                    <h3>Captured Images</h3>
+                    <div id="gallery" style="display: flex; flex-wrap: wrap; gap: 10px; padding: 0.25rem 0;"></div>
+                </div>
+            </section>
+            <section class="tab-panel" id="info" style="background: transparent;">
+                <h2>Information</h2>
+                <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <article class="card" style="padding: 1rem;">
+                        <h3>Myopia</h3>
+                        <p>Nearsightedness that causes distant objects to appear blurry.</p>
+                    </article>
+                    <article class="card" style="padding: 1rem;">
+                        <h3>Hyperopia</h3>
+                        <p>Farsightedness making nearby objects difficult to focus on clearly.</p>
+                    </article>
+                    <article class="card" style="padding: 1rem;">
+                        <h3>Astigmatism</h3>
+                        <p>An imperfection in the curvature of the eye's cornea or lens causing distorted vision paths.</p>
+                    </article>
+                    <article class="card" style="padding: 1rem;">
+                        <h3>Cataracts</h3>
+                        <p>A structural clouding of the eye's natural lens that progresses over time.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="chats" style="padding: 1rem; background: transparent;">
+                <div style="margin-bottom: 1rem;">
+                    <h2 id="chatTerminalTitle">Clinical Consultation Terminal</h2>
+                    <p id="chatTerminalSubtitle" style="color: #6b7280; margin: 0;">Securely communicate with verified specialists.</p>
+                </div>
+                
+                <div class="card chat-card" style="padding: 0; overflow: hidden; border-radius: 12px; height: calc(100vh - 11.5rem); min-height: 420px; display: flex; border: 1px solid #e5e7eb;">
+                    <div class="chat-shell" style="display: flex; width: 100%; height: 100%; min-height: 0;">
+                        <aside class="chat-sidebar" style="width: 240px; min-width: 220px; background: #f8fafc; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;">
+                            <div style="padding: 0.9rem 1rem; border-bottom: 1px solid #e5e7eb; background: #f8fafc;">
+                                <h3 id="sidebarPanelHeader" style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #51606f; margin: 0;">Available Connections</h3>
+                            </div>
+                            <div class="chat-sidebar-list" id="chatSidebar" style="overflow-y: auto; flex: 1; padding: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem;"></div>
+                        </aside>
+
+                        <div class="chat-main" style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: #fcfcfa;">
+                            <div class="chat-header" style="padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <h3 id="chatContactName" style="margin: 0; font-size: 1rem; color: #24313f;">Selecting Chat Line...</h3>
+                                    <span style="font-size: 0.7rem; color: #059669; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                        <span style="width: 5px; height: 5px; background: #059669; border-radius: 50%;"></span> Channel Secured
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="chat-window" id="chatWindow" style="flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; padding: 0.9rem 1rem; gap: 0.75rem; background: #fcfcfa;"></div>
+                            
+                            <div class="chat-input-container" style="padding: 0.75rem 1rem; border-top: 1px solid #e5e7eb; background: #f9fafb;">
+                                <div class="reply-preview" id="replyPreview" style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; background: #f3f4f6; border-left: 4px solid #800020; border-radius: 4px; margin-bottom: 0.5rem;" hidden>
+                                    <span id="replyPreviewText" style="font-size: 0.8rem; color: #24313f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+                                    <button type="button" id="cancelReplyBtn" style="background: none; border: none; color: #dc2626; font-size: 0.75rem; cursor: pointer;">Cancel</button>
+                                </div>
+                                <form class="chat-input" id="chatForm" style="display: flex; gap: 0.5rem;">
+                                    <input type="text" id="chatInput" placeholder="Type a message..." required autocomplete="off" style="flex: 1; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db; background: #fcfcfa; color: #24313f; border-radius: 6px; outline: none; font-size: 0.95rem;">
+                                    <button type="submit" style="background: #800020; color: #ffffff; border: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer;">Send</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="care" style="background: transparent;">
+                <h2>Patient Dashboard</h2>
+                <p>Review patient history, diagnosis details, and continue care conversations in one place.</p>
+                <div class="card care-professional-card" style="padding: 1rem; margin-top: 0.75rem;">
+                    <div class="care-patient-list">
+                        <h3 style="margin-top: 0;">Patients</h3>
+                        <div id="carePatientList"></div>
+                    </div>
+                    <div class="care-profile-block">
+                        <h3 id="carePatientName" style="margin-top: 0;">Select a patient</h3>
+                        <div id="carePatientProfile"></div>
+                        <div class="care-chat-block">
+                            <h3 style="margin-top: 0;">Recent Care Thread</h3>
+                            <div id="careChatWindow" class="care-chat-window"></div>
+                            <form id="careChatForm" class="care-chat-form">
+                                <input type="text" id="careChatInput" placeholder="Send a follow-up note..." required>
+                                <button type="submit">Send</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="profile" style="background: transparent;">
+                <h2>Profile Management</h2>
+                <div class="card profile-card" style="padding: 1.5rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem; max-width: 600px;">
+                    <p class="role-badge" style="margin: 0; font-weight: bold;">Account Clearance: <span id="profile-role" style="color:#800020;">Patient</span></p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-weight: 600;">Full Name <span style="color:red;">*</span></label>
+                        <input type="text" id="profile-name-input" placeholder="Enter name" required style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-weight: 600;">Birthdate <span style="color:red;">*</span></label>
+                        <input type="date" id="profile-birthdate" required style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-weight: 600;">Calculated Age</label>
+                        <input type="text" id="profile-age" readonly style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; background: #f3f4f6;">
+                    </div>
+
+                    <div id="doctorProfileFields" style="display: none; flex-direction: column; gap: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-weight: 600;">Qualifications</label>
+                            <input type="text" id="profile-qualifications-input" placeholder="MD, Ophthalmologist, etc." style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-weight: 600;">Hospital / Workplace</label>
+                            <input type="text" id="profile-hospital-input" placeholder="Hospital or clinic name" style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-weight: 600;">Location</label>
+                            <input type="text" id="profile-location-input" placeholder="City / Province / Country" style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-weight: 600;">Email Address</label>
+                            <input type="email" id="profile-doctor-email-input" placeholder="doctor@email.com" style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-weight: 600;">Phone / Telephone</label>
+                            <input type="tel" id="profile-doctor-phone-input" placeholder="+63 912 345 6789" style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-weight: 600;">Clinical Record Summary</label>
+                        <textarea id="profile-history" rows="4" style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit;"></textarea>
+                    </div>
+
+                    <button id="saveProfileBtn" type="button" style="padding: 0.6rem; background: #800020; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Save Modifications</button>
+                    <button id="deleteAccountBtn" type="button" style="margin-top: 0.75rem; padding: 0.6rem; background: #b91c1c; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Delete My Account</button>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="settings" style="background: transparent;">
+                <h2>Settings</h2>
+                <div class="card settings-card" style="padding: 1.5rem; margin-top: 1rem; max-width: 600px;">
+                    <h3>Accessibility Configuration</h3>
+                    <div style="margin-top: 1rem; margin-bottom: 1rem;">
+                        <label style="display:block; margin-bottom:0.5rem; font-weight:600;">Interface Theme:</label>
+                        <select id="settingsThemeSelect" style="padding: 0.5rem; width: 220px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <option value="light">Light Mode</option>
+                            <option value="dark">Dark Mode</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display:block; margin-bottom:0.5rem; font-weight:600;">Interface Font Size:</label>
+                        <select id="settingsFontSelect" style="padding: 0.5rem; width: 220px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <option value="font-sm">Small Text</option>
+                            <option value="font-md" selected>Medium Text (Default)</option>
+                            <option value="font-lg">Large Text</option>
+                        </select>
+                    </div>
+            </section>
+
+            <section class="tab-panel" id="admin" style="background: transparent;">
+                <h2>Admin Control Center</h2>
+                
+                <div class="card" style="padding: 1.5rem; margin-top: 1rem; margin-bottom: 1.5rem;">
+                    <h3 style="color:#800020; margin-top:0;">Medical Verification Requests Queue</h3>
+                    <p style="color:#6b7280; font-size:0.85rem; margin-bottom:1rem;">Inspect documentation credentials before updating active access status permissions.</p>
+                    <div class="verification-grid" id="verificationQueueList"></div>
+                </div>
+
+                <div class="card" style="padding: 1.5rem;">
+                    <h3 style="margin-top: 0;">Active Account Directory</h3>
+                    <div class="admin-list" id="userList" style="margin-top: 1rem; display:flex; flex-direction:column; gap:0.5rem;"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/dashboard-runtime.js"></script>
+    <script src="dashboard-scanner-ai.js"></script>
+</body>
+</html>

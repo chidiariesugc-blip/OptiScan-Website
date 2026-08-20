@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Hershey Nuqui",
+    "email": "chidiaries.ugc@gmail.com",
+    "password": "7ca6c270cfcfb10985c2dd9d6de8e1f057e0c0b52df30bd739767a8c42a7c6a5",
+    "role": "medical-professional",
+    "qualifications": "Opthalmologist",
+    "isQualified": true,
+    "licenseImage": "data/uploads/licenses/license_f420c8408f1896f4.jpg",
+    "requestedAt": 1787193116458
+  }
+]
